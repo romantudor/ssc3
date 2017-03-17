@@ -1,0 +1,100 @@
+library IEEE;
+use IEEE.STD_LOGIC_1164.ALL;
+use IEEE.STD_LOGIC_UNSIGNED.ALL;
+
+entity simAutomat is
+--  Port ( );
+end simAutomat;
+
+architecture Behavioral of simAutomat is
+signal clk : std_logic;
+signal Rst : STD_LOGIC;
+signal Frame : Std_LOGIC;
+signal Hit: Std_logic;
+signal OE : STD_LOGIC;
+signal GO : STD_LOGIC;
+signal ACT : STD_LOGIC;
+constant CLK_PERIOD : TIME := 10 ns;
+
+
+ type TIP_STARE is (idle,decode,busy,xfer1,xfer2);
+ signal stare : TIP_STARE;
+ 
+begin
+
+DUT : entity WORK.automat port map(clk=>clk,rst=>rst,frame=>frame,
+                        hit=>hit,oe=>oe,go=>go,act=>act);
+gen_clk: process
+   begin
+       Clk <= '0';
+   wait for (CLK_PERIOD/2);
+       Clk <= '1';
+   wait for (CLK_PERIOD/2);
+   end process gen_clk; 
+
+test: process
+    variable oecorect : std_logic;
+    variable gocorect : std_logic;
+    variable actcorect : std_logic;
+    variable nrerori : integer;
+    
+    begin
+        oecorect:='0';
+        gocorect:='0';
+        actcorect:='0';
+        nrerori:=0;
+     
+       Rst <= '1';
+       wait for 10 ns;
+       Rst <= '0';
+       wait for 10 ns;
+       
+       if(Stare=idle) then
+            if(oe/=oecorect) and (gocorect/=go) and (actcorect/=act) then
+                nrerori:=nrerori+1;  
+            end if;
+          end if;
+        wait for 10 ns;
+            stare<=decode;  
+       if(Stare=decode) then
+          if(oe/=oecorect) and (gocorect/=go) and (actcorect/=act) then
+             nrerori:=nrerori+1;  
+          else
+           oecorect:='0';
+           gocorect:='0';
+           actcorect:='1';   
+          end if;
+       end if;    
+       wait for 10 ns;
+            stare<=busy;
+        if(Stare=busy) then
+           if(oe/=oecorect) and (gocorect/=go) and (actcorect/=act) then
+             nrerori:=nrerori+1;  
+           else
+            oecorect:='1';
+            gocorect:='1';
+            actcorect:='1';
+          end if;
+        end if;     
+        wait for 10 ns;
+             stare<=xfer1;
+        if(Stare=xfer1) then
+          if(oe/=oecorect) and (gocorect/=go) and (actcorect/=act) then
+             nrerori:=nrerori+1;   
+                 end if;
+             end if;    
+          wait for 10 ns;
+               stare<=xfer2; 
+                oecorect:='1';
+                gocorect:='0';
+                actcorect:='1';  
+        if(Stare=xfer2) then
+           if(oe/=oecorect) and (gocorect/=go) and (actcorect/=act) then
+              nrerori:=nrerori+1;   
+           end if;
+        end if;  
+        report "Testare terminata cu " &
+           INTEGER'image (NrErori) & " erori";    
+    end process test;
+    
+end Behavioral;
